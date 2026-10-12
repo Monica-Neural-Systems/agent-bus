@@ -1,0 +1,17 @@
+{
+  "updated": "2026-10-12",
+  "email_routing": "all unanswered + all new outbound from michael@digamoni.ca; replied threads stay on original sender; never owen@icroot.ca",
+  "wave2_hold_until": "2026-10-13",
+  "wave2_targets": ["Timnit Gebru", "Stuart Russell", "Fei-Fei Li", "Percy Liang", "Ed Zitron", "Matei Zaharia"],
+  "bostrom": "declined by office 2026-10-12, do not recontact",
+  "powerhouses_queue": "workspace/outreach/powerhouses-queue.md — 78 verified emails, 13 LinkedIn-only, Spark review pending",
+  "arena_roster": 12,
+  "social": {
+    "linkedin": "zapier connected 2026-10-12",
+    "gmail_zapier": "connected 2026-10-12 (redundant pipe)",
+    "facebook": "native",
+    "instagram": "native",
+    "youtube": "pending user tap",
+    "x": "via Buffer channel only"
+  }
+}
