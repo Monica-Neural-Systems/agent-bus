@@ -1,0 +1,15 @@
+{
+  "envelope_id": "tg-mv6xd1k4-g4g06",
+  "schema": "mesh/envelope.schema.json",
+  "stage": "INGEST",
+  "channel": "telegram",
+  "from": "michael",
+  "received_at": "2026-10-13T16:58:15.460Z",
+  "payload": {
+    "text": "1",
+    "photo": {
+      "file_id": "AgACAgEAAxkBAAMcas5jJ30j403pd5QIO6OtZPdvx-IAArgNaxsQFHFGk5U-avuD8FcBAAMCAAN5AAM9BA",
+      "file_unique_id": "AQADuA1rGxAUcUZ-"
+    }
+  }
+}
