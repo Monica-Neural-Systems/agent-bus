@@ -1,0 +1,11 @@
+{
+  "envelope_id": "tg-mv75c8m0-8am5b",
+  "schema": "mesh/envelope.schema.json",
+  "stage": "INGEST",
+  "channel": "telegram",
+  "from": "michael",
+  "received_at": "2026-10-13T20:41:34.872Z",
+  "payload": {
+    "text": "Ping"
+  }
+}
