@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-13",
+  "updated": "2026-10-13 04:50 UTC",
   "email_routing": "all unanswered + all new outbound from michael@digamoni.ca; replied threads stay on original sender; never owen@icroot.ca",
   "wave2_hold_until": "2026-10-13",
   "wave2_targets": [
@@ -11,7 +11,7 @@
     "Matei Zaharia"
   ],
   "bostrom": "declined by office 2026-10-12, do not recontact",
-  "powerhouses_queue": "workspace/outreach/powerhouses-queue.md \u2014 78/91 fresh verified emails, Spark review pending",
+  "powerhouses_queue": "workspace/outreach/powerhouses-queue.md — 78/91 fresh verified emails, Spark review pending",
   "arena_roster": 12,
   "social": {
     "linkedin": "zapier connected 2026-10-12",
@@ -22,5 +22,5 @@
     "x": "via Buffer channel only"
   },
   "zitron": "ed@ezpr.com verified live on ezpr.com/contact/ 2026-10-12; dead ez@ezpr.biz was wrong domain; staged draft already targets ed@ezpr.com; stays in Wave-2 round Tue Oct 13",
-  "gmail_status": "connector reports not_connected on Owen run 2026-10-12 evening \u2014 mode40 pre-draft audit blocked; flagged for reconnect"
+  "gmail_status": "connected as of 2026-10-13 04:50 UTC night check (evening not_connected resolved); mode40 pre-draft audit unblocked"
 }
