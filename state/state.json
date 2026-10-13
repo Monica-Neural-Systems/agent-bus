@@ -1,7 +1,9 @@
 {
-  "updated": "2026-10-13 04:50 UTC",
+  "updated": "2026-10-13 18:50 UTC",
   "email_routing": "all unanswered + all new outbound from michael@digamoni.ca; replied threads stay on original sender; never owen@icroot.ca",
-  "wave2_hold_until": "2026-10-13",
+  "wave2": "hold lifted 2026-10-13 — six drafts sendable (Gebru, Russell, Li, Liang, Zitron, Zaharia); nothing sends without Michael's exact-text approval; no Wave-2 sends in sent mail as of 18:50 UTC",
+  "zaharia_followup": "routed to Claude as fallback writer per Michael's 2026-10-12 'you decide' instruction; bus request delivered 2026-10-13 18:50 UTC; no Zaharia draft in Drafts as of 09:50 UTC hygiene audit",
+  "wave2_hold_until": "2026-10-13 (lifted)",
   "wave2_targets": [
     "Timnit Gebru",
     "Stuart Russell",
@@ -21,6 +23,9 @@
     "youtube": "zapier connected 2026-10-12 (he tapped the link)",
     "x": "via Buffer channel only"
   },
-  "zitron": "ed@ezpr.com verified live on ezpr.com/contact/ 2026-10-12; dead ez@ezpr.biz was wrong domain; staged draft already targets ed@ezpr.com; stays in Wave-2 round Tue Oct 13",
-  "gmail_status": "connected as of 2026-10-13 04:50 UTC night check (evening not_connected resolved); mode40 pre-draft audit unblocked"
+  "zitron": "CONFLICT RESOLVED 2026-10-13 midday: exactly one live draft, r1164458923075287179 -> ez@betteroffline.com (his own published contact email, per Better Offline show notes on iHeart/Apple Podcasts/Omny + wheresyoured.at newsletter). ed@ezpr.com also verified live on ezpr.com/contact/ (Oct 12); ez@ezpr.biz was the dead wrong-domain. Old ed@ezpr.com draft gone from Drafts. No Zitron sends in sent mail.",
+  "gmail_status": "connected (verified live 2026-10-13 18:50 UTC — drafts read + triage OK)",
+  "icroot_bounce": "CLOSED 2026-10-13 midday: the Oct 12 Failure/Delay notices for owen@icroot.ca trace to Mike's own Oct 9 'Forward test 11:23' self-test (thread in trash). No campaign mail routes through owen@icroot.ca.",
+  "gumpert_sisp": "reply draft staged 2026-10-13 11:26 Regina to Zahra.Jamani@parthenon.ey.com (EY-Parthenon, court file CL-26-00000409-0000); stays on original sender krash6t9@gmail.com per thread rule; unsent",
+  "mesh_pending_claude": "inbox/claude/tg-mv6xd1k4-g4g06.json — INGEST envelope from Michael 2026-10-13 16:58 UTC (text '1' + photo ref); unhandled, Claude's lane"
 }
