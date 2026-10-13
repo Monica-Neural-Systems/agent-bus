@@ -35,6 +35,7 @@ jobs:
         uses: gradle/gradle-build-action@v3
         with:
           build-root-directory: android-screenshot-bridge
+          gradle-version: 8.10.2
           arguments: assembleRelease
 
       - name: Upload APK
