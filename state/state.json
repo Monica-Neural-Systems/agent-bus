@@ -1,7 +1,7 @@
 {
   "updated": "2026-10-13 18:50 UTC",
   "email_routing": "all unanswered + all new outbound from michael@digamoni.ca; replied threads stay on original sender; never owen@icroot.ca",
-  "wave2": "hold lifted 2026-10-13 — six drafts sendable (Gebru, Russell, Li, Liang, Zitron, Zaharia); nothing sends without Michael's exact-text approval; no Wave-2 sends in sent mail as of 18:50 UTC",
+  "wave2": "ZITRON SENT 2026-10-13 09:15 Regina from michael@digamoni.ca -> ez@betteroffline.com (his self-published contact; correct routing). Stale krash6t9@gmail.com draft r1164458923075287179 inert in Drafts — Michael approved deletion, but Gmail API draft-delete is scope-blocked, so he must delete it manually from the Gmail app. Gebru/Russell/Li/Liang drafts staged, awaiting his exact-text approval; Zaharia draft pending from Claude.",
   "zaharia_followup": "routed to Claude as fallback writer per Michael's 2026-10-12 'you decide' instruction; bus request delivered 2026-10-13 18:50 UTC; no Zaharia draft in Drafts as of 09:50 UTC hygiene audit",
   "wave2_hold_until": "2026-10-13 (lifted)",
   "wave2_targets": [
