@@ -1,0 +1,22 @@
+{
+  "task_id": "tg-8824599912-36",
+  "envelope_id": "tg-8824599912-36",
+  "schema": "mesh/envelope.schema.json",
+  "bridge_version": "2.1.0",
+  "stage": "INGEST",
+  "status": "QUEUED",
+  "channel": "telegram",
+  "from": "michael",
+  "destination": "owen",
+  "reply_to": "outbox/michael/tg-8824599912-36.json",
+  "created_at": "2026-10-14T06:41:43.174Z",
+  "received_at": "2026-10-14T06:41:43.174Z",
+  "source_metadata": {
+    "update_id": 147219444,
+    "message_id": 36,
+    "chat_id": "8824599912"
+  },
+  "payload": {
+    "text": "To mama"
+  }
+}
