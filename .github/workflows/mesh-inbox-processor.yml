@@ -2,6 +2,8 @@ name: Mesh inbox processor
 
 # Consumer for the Telegram -> GitHub -> agent -> outbox -> Telegram loop.
 # - process: scans inbox/*/ for new envelopes, validates, tracks seen IDs.
+# - route: routes /agent commands and @mentions to target agent inboxes.
+# - handoff: processes agent-to-agent handoff requests.
 # - deliver: sends outbox/michael/ results via Telegram (needs secrets).
 #
 # Required repository secrets (Settings -> Secrets -> Actions):
@@ -34,13 +36,35 @@ jobs:
           python-version: '3.12'
       - name: Process inbox
         run: python3 mesh/inbox_processor.py process
+      - name: Route agent commands
+        run: python3 mesh/inbox_processor.py route
+      - name: Process handoffs
+        run: python3 mesh/inbox_processor.py handoff
       - name: Commit processed state
         run: |
           git config user.name "mesh-processor"
           git config user.email "mesh-processor@users.noreply.github.com"
-          git add mesh/processed.json
+          git add mesh/processed.json inbox/
           git diff --cached --quiet || git commit -m "mesh: process inbox $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+          # Push with retry: fetch, rebase, push. Abort visibly on rebase conflict.
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "REBASE CONFLICT on attempt $attempt — aborting, failing visibly"
+              git rebase --abort
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt"
+              break
+            fi
+            echo "Push rejected on attempt $attempt, retrying in 5s..."
+            sleep 5
+            if [ "$attempt" -eq 5 ]; then
+              echo "Push failed after 5 attempts — failing visibly"
+              exit 1
+            fi
+          done
 
   deliver:
     runs-on: ubuntu-latest
@@ -61,4 +85,22 @@ jobs:
           git config user.email "mesh-processor@users.noreply.github.com"
           git add mesh/processed.json outbox/
           git diff --cached --quiet || git commit -m "mesh: deliver outbox $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+          # Push with retry: fetch, rebase, push. Abort visibly on rebase conflict.
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "REBASE CONFLICT on attempt $attempt — aborting, failing visibly"
+              git rebase --abort
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt"
+              break
+            fi
+            echo "Push rejected on attempt $attempt, retrying in 5s..."
+            sleep 5
+            if [ "$attempt" -eq 5 ]; then
+              echo "Push failed after 5 attempts — failing visibly"
+              exit 1
+            fi
+          done
