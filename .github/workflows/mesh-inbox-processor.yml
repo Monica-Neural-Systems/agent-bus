@@ -1,0 +1,64 @@
+name: Mesh inbox processor
+
+# Consumer for the Telegram -> GitHub -> agent -> outbox -> Telegram loop.
+# - process: scans inbox/*/ for new envelopes, validates, tracks seen IDs.
+# - deliver: sends outbox/michael/ results via Telegram (needs secrets).
+#
+# Required repository secrets (Settings -> Secrets -> Actions):
+#   TELEGRAM_BOT_TOKEN : bot token for outbox delivery
+#   TELEGRAM_CHAT_ID   : Michael's Telegram chat id
+# Without them, deliver skips gracefully; process still runs.
+
+on:
+  push:
+    paths:
+      - 'inbox/**'
+  schedule:
+    - cron: '*/15 * * * *'  # backup sweep every 15 min
+  workflow_dispatch:
+
+permissions:
+  contents: write  # move inbox files to done/, update mesh/processed.json
+
+concurrency:
+  group: mesh-inbox-processor
+  cancel-in-progress: false  # never cancel a run; prevents duplicate processing
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Process inbox
+        run: python3 mesh/inbox_processor.py process
+      - name: Commit processed state
+        run: |
+          git config user.name "mesh-processor"
+          git config user.email "mesh-processor@users.noreply.github.com"
+          git add mesh/processed.json
+          git diff --cached --quiet || git commit -m "mesh: process inbox $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
+
+  deliver:
+    runs-on: ubuntu-latest
+    needs: process
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Deliver outbox via Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 mesh/inbox_processor.py deliver
+      - name: Commit delivery state
+        run: |
+          git config user.name "mesh-processor"
+          git config user.email "mesh-processor@users.noreply.github.com"
+          git add mesh/processed.json outbox/
+          git diff --cached --quiet || git commit -m "mesh: deliver outbox $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
