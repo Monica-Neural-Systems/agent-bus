@@ -1,0 +1,6 @@
+{
+  "task_id": "test-delivery-001",
+  "from": "owen",
+  "created_at": "2026-10-14T06:45:00Z",
+  "reply_text": "Mesh test: outbox delivery is working. This is a test reply from the GitHub Actions workflow."
+}
