@@ -1,0 +1,6 @@
+{
+  "task_id": "test-owen-push-001",
+  "reply_text": "Owen here — push test from the agent wire. If you see this, Telegram delivery is working.",
+  "from": "owen",
+  "created_at": "2026-10-14T18:30:00Z"
+}
