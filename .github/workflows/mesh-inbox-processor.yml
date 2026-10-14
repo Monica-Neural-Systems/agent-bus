@@ -40,6 +40,7 @@ jobs:
           git config user.email "mesh-processor@users.noreply.github.com"
           git add mesh/processed.json
           git diff --cached --quiet || git commit -m "mesh: process inbox $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git pull --rebase origin main || true
           git push
 
   deliver:
@@ -61,4 +62,5 @@ jobs:
           git config user.email "mesh-processor@users.noreply.github.com"
           git add mesh/processed.json outbox/
           git diff --cached --quiet || git commit -m "mesh: deliver outbox $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git pull --rebase origin main || true
           git push
