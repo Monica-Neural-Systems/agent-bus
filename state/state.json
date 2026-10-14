@@ -1,31 +1,33 @@
 {
-  "updated": "2026-10-13 18:50 UTC",
-  "email_routing": "all unanswered + all new outbound from michael@digamoni.ca; replied threads stay on original sender; never owen@icroot.ca",
-  "wave2": "ZITRON SENT 2026-10-13 09:15 Regina from michael@digamoni.ca -> ez@betteroffline.com (his self-published contact; correct routing). Stale krash6t9@gmail.com draft r1164458923075287179 inert in Drafts — Michael approved deletion, but Gmail API draft-delete is scope-blocked, so he must delete it manually from the Gmail app. Gebru/Russell/Li/Liang drafts staged, awaiting his exact-text approval; Zaharia draft pending from Claude.",
-  "zaharia_followup": "routed to Claude as fallback writer per Michael's 2026-10-12 'you decide' instruction; bus request delivered 2026-10-13 18:50 UTC; no Zaharia draft in Drafts as of 09:50 UTC hygiene audit",
-  "wave2_hold_until": "2026-10-13 (lifted)",
-  "wave2_targets": [
-    "Timnit Gebru",
-    "Stuart Russell",
-    "Fei-Fei Li",
-    "Percy Liang",
-    "Ed Zitron",
-    "Matei Zaharia"
-  ],
-  "bostrom": "declined by office 2026-10-12, do not recontact",
-  "powerhouses_queue": "workspace/outreach/powerhouses-queue.md — 78/91 fresh verified emails, Spark review pending",
-  "arena_roster": 12,
-  "social": {
-    "linkedin": "zapier connected 2026-10-12",
-    "gmail_zapier": "connected 2026-10-12 (redundant pipe)",
-    "facebook": "native",
-    "instagram": "native",
-    "youtube": "zapier connected 2026-10-12 (he tapped the link)",
-    "x": "via Buffer channel only"
-  },
-  "zitron": "CONFLICT RESOLVED 2026-10-13 midday: exactly one live draft, r1164458923075287179 -> ez@betteroffline.com (his own published contact email, per Better Offline show notes on iHeart/Apple Podcasts/Omny + wheresyoured.at newsletter). ed@ezpr.com also verified live on ezpr.com/contact/ (Oct 12); ez@ezpr.biz was the dead wrong-domain. Old ed@ezpr.com draft gone from Drafts. No Zitron sends in sent mail.",
-  "gmail_status": "connected (verified live 2026-10-13 18:50 UTC — drafts read + triage OK)",
-  "icroot_bounce": "CLOSED 2026-10-13 midday: the Oct 12 Failure/Delay notices for owen@icroot.ca trace to Mike's own Oct 9 'Forward test 11:23' self-test (thread in trash). No campaign mail routes through owen@icroot.ca.",
-  "gumpert_sisp": "reply draft staged 2026-10-13 11:26 Regina to Zahra.Jamani@parthenon.ey.com (EY-Parthenon, court file CL-26-00000409-0000); stays on original sender krash6t9@gmail.com per thread rule; unsent",
-  "mesh_pending_claude": "inbox/claude/tg-mv6xd1k4-g4g06.json — INGEST envelope from Michael 2026-10-13 16:58 UTC (text '1' + photo ref); unhandled, Claude's lane"
+ "updated": "2026-10-14 00:48 UTC",
+ "email_routing": "all unanswered + all new outbound from michael@digamoni.ca; replied threads stay on original sender; never owen@icroot.ca",
+ "wave2": "ZITRON SENT 2026-10-13 09:15 Regina from michael@digamoni.ca -> ez@betteroffline.com (his self-published contact; correct routing). Stale krash6t9@gmail.com draft r1164458923075287179 inert in Drafts \u2014 Michael approved deletion, but Gmail API draft-delete is scope-blocked, so he must delete it manually from the Gmail app. Gebru/Russell/Li/Liang drafts staged, awaiting his exact-text approval; Zaharia draft pending from Claude.",
+ "zaharia_followup": "Routed to Claude as fallback writer per Michael's 2026-10-12 'you decide' instruction; bus request delivered 2026-10-13 18:50 UTC; still NO Zaharia draft in Gmail as of 2026-10-14 00:48 UTC \u2014 Claude hasn't delivered.",
+ "wave2_hold_until": "2026-10-13 (lifted)",
+ "wave2_targets": [
+  "Timnit Gebru",
+  "Stuart Russell",
+  "Fei-Fei Li",
+  "Percy Liang",
+  "Ed Zitron",
+  "Matei Zaharia"
+ ],
+ "bostrom": "declined by office 2026-10-12, do not recontact",
+ "powerhouses_queue": "workspace/outreach/powerhouses-queue.md \u2014 78/91 fresh verified emails, Spark review pending",
+ "arena_roster": 12,
+ "social": {
+  "linkedin": "zapier connected 2026-10-12",
+  "gmail_zapier": "connected 2026-10-12 (redundant pipe)",
+  "facebook": "native",
+  "instagram": "native",
+  "youtube": "zapier connected 2026-10-12 (he tapped the link)",
+  "x": "via Buffer channel only"
+ },
+ "zitron": "Zitron SENT 2026-10-13 09:15 Regina from michael@digamoni.ca -> ez@betteroffline.com (his self-published contact). ed@ezpr.com also live; ez@ezpr.biz dead wrong-domain. Stale krash draft r1164458923075287179 still needs manual deletion from the Gmail app (API scope-blocked).",
+ "gmail_status": "connected (verified live 2026-10-13 18:50 UTC \u2014 drafts read + triage OK)",
+ "icroot_bounce": "CLOSED 2026-10-13 midday: the Oct 12 Failure/Delay notices for owen@icroot.ca trace to Mike's own Oct 9 'Forward test 11:23' self-test (thread in trash). No campaign mail routes through owen@icroot.ca.",
+ "gumpert_sisp": "SENT 2026-10-13 11:29 Regina from krash6t9@gmail.com to Zahra.Jamani@parthenon.ey.com (EY-Parthenon, court file CL-26-00000409-0000); original sender kept per thread rule.",
+ "mesh_pending_claude": "inbox/claude/tg-mv6xd1k4-g4g06.json \u2014 INGEST envelope from Michael 2026-10-13 16:58 UTC (text '1' + photo ref); still unhandled, Claude's lane.",
+ "mesh_ping_owen": "Telegram INGEST envelope tg-mv75c8m0-8am5b ('Ping', from Mike, 2026-10-13 20:41 UTC) received in inbox/owen and handled \u2014 mesh intake path to Owen confirmed live; moved to inbox/owen/done/.",
+ "mesh_identity": "2026-10-13 PR #1 merged: 'spark' retired as mesh identity -> 'argon' canonical (Gemini 4 Argon Tasks mode); new dispatches go to inbox/argon/; inbox/spark/ preserved legacy. Editorial fallback: ARGON_PENDING->ARGON_UNAVAILABLE->CLAUDE_FINAL_EDIT_FALLBACK."
 }
