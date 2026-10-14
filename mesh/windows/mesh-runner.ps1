@@ -26,12 +26,15 @@ $TasksDir = Join-Path $MeshDir "tasks"
 $ArchDir  = Join-Path $MeshDir "archive"
 $InboxDir = Join-Path $RepoPath "inbox"
 $RegistryFile = Join-Path $MeshDir "registry.json"
-$Agents = @("openclaw", "claude", "spark", "owen")
+$Agents = @("openclaw", "claude", "argon", "owen")
+# Legacy alias: "spark" was the pre-2026-10-13 canonical ID for argon. Old envelopes
+# and inbox files may reference it; new work uses "argon".
+$LegacyAliases = @{ spark = "argon" }
 $AgentRoles = @{
   openclaw = "Windows host daemon: intake adapters, watched folders, Telegram alerts, local file ops."
-  claude   = "Lead Reasoning: Fast Response v8 drafts (dial rules, <850/<280, text blocks, 3-line breakdown), business packages, epistemic challenges."
-  spark    = "Editor-in-Chief: final editorial sign-off on ALL public text."
-  owen     = "Web Scout + Distribution: research, verification, Buffer queueing (post-approval), execution, audit."
+  claude   = "First-draft writer. Fast Response v8 drafts, business packages, epistemic challenges. Temporary final editor ONLY when argon unavailable (marked FINAL_EDIT_FALLBACK_CLAUDE)."
+  argon    = "Preferred final reasoning editor and rebuttal sharpener. Final editorial sign-off on ALL public text. (Formerly 'spark'.)"
+  owen     = "Intake, dispatch, orchestration, delivery, retries, audit. Research, verification, evidence collection. Buffer queueing (post-approval)."
 }
 
 function Write-MeshLog($msg) {
@@ -39,8 +42,15 @@ function Write-MeshLog($msg) {
   Write-Host "[$ts] $msg"
 }
 
+function Get-CanonicalText([string]$text) {
+  # Canonical form for hashing (must match pipeline.py canonical_text):
+  # CRLF -> LF, lone CR -> LF, strip leading BOM. No trailing-newline stripping.
+  $t = $text -replace "`r`n", "`n" -replace "`r", "`n"
+  if ($t.StartsWith([char]0xFEFF)) { $t = $t.Substring(1) }
+  return $t
+}
 function Get-Sha1Hex([string]$text) {
-  $bytes = [Text.Encoding]::UTF8.GetBytes($text)
+  $bytes = [Text.Encoding]::UTF8.GetBytes((Get-CanonicalText $text))
   $sha = [Security.Cryptography.SHA1]::Create()
   $hash = $sha.ComputeHash($bytes)
   ($hash | ForEach-Object { $_.ToString("x2") }) -join ""
@@ -106,7 +116,7 @@ function New-TaskFromFile([string]$filePath, [string]$adapter, [string]$intent, 
     })
   }
   $approvals = [pscustomobject]@{}
-  foreach ($g in @("spark_editorial", "michael_send", "michael_buffer", "michael_spend")) {
+  foreach ($g in @("argon_editorial", "michael_send", "michael_buffer", "michael_spend")) {
     $approvals | Add-Member -NotePropertyName $g -NotePropertyValue ([pscustomobject]@{
       status = "not_required"; by = $null; at = $null; text_sha1 = $null
     })
@@ -157,8 +167,8 @@ function Invoke-Normalize([string]$taskDir, $env) {
     Set-Stage $env "ARCHIVE" "duplicate"
   } else {
     if ($env.task_type -eq "screenshot_rebuttal") {
-      $env.approvals.spark_editorial.status = "pending"
-      Add-Audit $env "NORMALIZE: spark_editorial gate armed (public text task)"
+      $env.approvals.argon_editorial.status = "pending"
+      Add-Audit $env "NORMALIZE: argon_editorial gate armed (public text task)"
     }
     Set-Stage $env "NORMALIZE" "evidence hashed, gates armed"
   }
@@ -240,7 +250,9 @@ function Invoke-Synthesize([string]$taskDir, $env) {
 function Invoke-Validate([string]$taskDir, $env) {
   $problems = @()
   if ($env.task_type -in @("screenshot_rebuttal", "outreach_draft", "business_package")) {
-    if ($env.approvals.spark_editorial.status -ne "approved") { $problems += "spark_editorial not approved" }
+    $edGate = $env.approvals.argon_editorial
+    if (-not $edGate) { $edGate = $env.approvals.spark_editorial }  # legacy alias
+    if ($edGate.status -ne "approved") { $problems += "argon_editorial not approved" }
   }
   if ($env.result.delivery_channel -eq "buffer" -and $env.approvals.michael_buffer.status -ne "approved") {
     $problems += "michael_buffer not approved"

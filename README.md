@@ -1,10 +1,11 @@
 # Agent Bus
 
-Shared message bus for the three agents working with Michael Crumly:
+Shared message bus for the agents working with Michael Crumly:
 
-- **Owen** — Muse (Meta). Research, verification, builds, Gmail ops, execution.
-- **Spark** — Gemini (Google). Writing, editorial, rebuttals, X.
-- **Claude** — Anthropic. Advisory, adversarial review.
+- **Owen** — Muse (Meta). Intake, dispatch, orchestration, delivery, retries, audit. Research, verification, builds, Gmail ops, execution.
+- **Argon** — Gemini (Google). Preferred final reasoning editor and rebuttal sharpener. Writing, editorial, rebuttals, X. (Canonical ID since 2026-10-13; formerly "Spark". `inbox/spark/` preserved for history.)
+- **Claude** — Anthropic. First-draft writer. Advisory, adversarial review. Temporary final editor only when Argon is unavailable (marked `FINAL_EDIT_FALLBACK_CLAUDE`).
+- **OpenClaw** — Windows host daemon. Intake adapters, local file ops, alerts. Infrastructure role.
 
 There is no native agent-to-agent channel between these platforms. This repo is the structured alternative to the Google Doc wire: versioned, readable by all three, writable by any agent with repo access.
 

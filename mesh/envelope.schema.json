@@ -1,1 +1,356 @@
-{"$schema":"http://json-schema.org/draft-07/schema#","definitions":{"agent_slot":{"properties":{"note":{"type":"string"},"result_ref":{"description":"Repo-relative path to results/<agent>.json","type":["string","null"]},"role":{"description":"This agent's fixed lane for this task. Never changes the shared task.","type":"string"},"status":{"description":"unavailable = agent did not respond in time or integration down. Recorded, never fabricated.","enum":["pending","done","failed","unavailable","skipped"],"type":"string"},"updated_at":{"format":"date-time","type":["string","null"]}},"required":["role","status","result_ref","note","updated_at"],"type":"object"},"approval":{"properties":{"at":{"format":"date-time","type":["string","null"]},"by":{"type":["string","null"]},"status":{"enum":["not_required","pending","approved","rejected"],"type":"string"},"text_sha1":{"description":"SHA1 of the exact approved text. Execution must match it byte-for-byte.","type":["string","null"]}},"required":["status","by","at","text_sha1"],"type":"object"}},"description":"One envelope per task. Every input adapter produces this. Every agent reads this. No side channels.","properties":{"approvals":{"properties":{"michael_buffer":{"$ref":"#/definitions/approval"},"michael_send":{"$ref":"#/definitions/approval"},"michael_spend":{"$ref":"#/definitions/approval"},"spark_editorial":{"$ref":"#/definitions/approval"}},"required":["spark_editorial","michael_send","michael_buffer","michael_spend"],"type":"object"},"audit":{"description":"Append-only human-readable lines. Every stage change, approval, execution, and failure lands here.","items":{"type":"string"},"type":"array"},"created_at":{"format":"date-time","type":"string"},"dial_command":{"description":"Fast Response v8 dial 1-9, AUTO_TRIAGE, or null when not a rebuttal task.","type":["string","null"]},"dispatch":{"additionalProperties":false,"properties":{"claude":{"$ref":"#/definitions/agent_slot"},"openclaw":{"$ref":"#/definitions/agent_slot"},"owen":{"$ref":"#/definitions/agent_slot"},"spark":{"$ref":"#/definitions/agent_slot"}},"required":["openclaw","claude","spark","owen"],"type":"object"},"duplicate_of":{"description":"Set when NORMALIZE finds this task_id already in the registry.","type":["string","null"]},"envelope_version":{"const":"1.0","type":"string"},"evidence":{"properties":{"image_path":{"description":"Repo-relative path under mesh/tasks/<task_id>/evidence/","type":["string","null"]},"image_sha1":{"type":["string","null"]},"text":{"type":["string","null"]},"url":{"type":["string","null"]}},"required":["image_path","image_sha1","text","url"],"type":"object"},"result":{"properties":{"delivered_at":{"format":"date-time","type":["string","null"]},"delivery_channel":{"enum":["chat","buffer","telegram","email_draft",null],"type":["string","null"]},"synthesized":{"type":["object","null"]}},"required":["synthesized","delivery_channel","delivered_at"],"type":"object"},"source_adapter":{"enum":["chat_upload","telegram","mms","watched_folder","browser_capture","manual"],"type":"string"},"stage":{"enum":["INGEST","NORMALIZE","DISPATCH","COLLECT","SYNTHESIZE","VALIDATE","AUTHORIZED_EXECUTION","DELIVER","ARCHIVE"],"type":"string"},"stage_history":{"items":{"properties":{"at":{"format":"date-time","type":"string"},"by":{"type":"string"},"note":{"type":"string"},"stage":{"type":"string"}},"required":["stage","at","by"],"type":"object"},"type":"array"},"task_id":{"description":"Deterministic: sha1(source_adapter|evidence_key|created_utc_minute), first 16 hex chars. Same input twice = same id = dedup hit.","type":"string"},"task_type":{"enum":["screenshot_rebuttal","outreach_draft","research","tender_scout","price_watch","business_package","epistemic_challenge","other"],"type":"string"},"user_intent":{"description":"Verbatim user intent as captured at ingest.","type":"string"}},"required":["envelope_version","task_id","created_at","source_adapter","task_type","user_intent","evidence","stage","stage_history","dispatch","approvals","result","audit"],"title":"Mesh Canonical Task Envelope v1.0","type":"object"}
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "definitions": {
+  "agent_slot": {
+   "properties": {
+    "note": {
+     "type": "string"
+    },
+    "result_ref": {
+     "description": "Repo-relative path to results/<agent>.json",
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "role": {
+     "description": "This agent's fixed lane for this task. Never changes the shared task.",
+     "type": "string"
+    },
+    "status": {
+     "description": "unavailable = agent did not respond in time or integration down. Recorded, never fabricated.",
+     "enum": [
+      "pending",
+      "done",
+      "failed",
+      "unavailable",
+      "skipped"
+     ],
+     "type": "string"
+    },
+    "updated_at": {
+     "format": "date-time",
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "role",
+    "status",
+    "result_ref",
+    "note",
+    "updated_at"
+   ],
+   "type": "object"
+  },
+  "approval": {
+   "properties": {
+    "at": {
+     "format": "date-time",
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "by": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "status": {
+     "enum": [
+      "not_required",
+      "pending",
+      "approved",
+      "rejected"
+     ],
+     "type": "string"
+    },
+    "text_sha1": {
+     "description": "SHA1 of the exact approved text. Execution must match it byte-for-byte.",
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "status",
+    "by",
+    "at",
+    "text_sha1"
+   ],
+   "type": "object"
+  }
+ },
+ "description": "One envelope per task. Every input adapter produces this. Every agent reads this. No side channels.",
+ "properties": {
+  "approvals": {
+   "properties": {
+    "michael_buffer": {
+     "$ref": "#/definitions/approval"
+    },
+    "michael_send": {
+     "$ref": "#/definitions/approval"
+    },
+    "michael_spend": {
+     "$ref": "#/definitions/approval"
+    },
+    "spark_editorial": {
+     "$ref": "#/definitions/approval"
+    },
+    "argon_editorial": {
+     "$ref": "#/definitions/approval"
+    }
+   },
+   "required": [],
+   "type": "object"
+  },
+  "audit": {
+   "description": "Append-only human-readable lines. Every stage change, approval, execution, and failure lands here.",
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "created_at": {
+   "format": "date-time",
+   "type": "string"
+  },
+  "dial_command": {
+   "description": "Fast Response v8 dial 1-9, AUTO_TRIAGE, or null when not a rebuttal task.",
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "dispatch": {
+   "properties": {
+    "claude": {
+     "$ref": "#/definitions/agent_slot"
+    },
+    "openclaw": {
+     "$ref": "#/definitions/agent_slot"
+    },
+    "owen": {
+     "$ref": "#/definitions/agent_slot"
+    },
+    "spark": {
+     "$ref": "#/definitions/agent_slot"
+    },
+    "argon": {
+     "$ref": "#/definitions/agent_slot"
+    }
+   },
+   "required": [
+    "openclaw",
+    "claude",
+    "owen"
+   ],
+   "type": "object",
+   "description": "argon is canonical (replaced spark 2026-10-13). spark accepted as legacy alias for old envelopes. additionalProperties false would break old records; both keys allowed."
+  },
+  "duplicate_of": {
+   "description": "Set when NORMALIZE finds this task_id already in the registry.",
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "envelope_version": {
+   "const": "1.0",
+   "type": "string"
+  },
+  "evidence": {
+   "properties": {
+    "image_path": {
+     "description": "Repo-relative path under mesh/tasks/<task_id>/evidence/",
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "image_sha1": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "text": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "url": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "image_path",
+    "image_sha1",
+    "text",
+    "url"
+   ],
+   "type": "object"
+  },
+  "result": {
+   "properties": {
+    "delivered_at": {
+     "format": "date-time",
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "delivery_channel": {
+     "enum": [
+      "chat",
+      "buffer",
+      "telegram",
+      "email_draft",
+      null
+     ],
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "synthesized": {
+     "type": [
+      "object",
+      "null"
+     ]
+    },
+    "delivery_status": {
+     "enum": [
+      "DELIVERY_PENDING",
+      "DELIVERED",
+      "FAILED",
+      "AMBIGUOUS",
+      null
+     ],
+     "description": "DELIVERY_PENDING until the real external result is confirmed. A local delivery.md file is intent, not proof."
+    }
+   },
+   "required": [
+    "synthesized",
+    "delivery_channel",
+    "delivered_at"
+   ],
+   "type": "object"
+  },
+  "source_adapter": {
+   "enum": [
+    "chat_upload",
+    "telegram",
+    "mms",
+    "watched_folder",
+    "browser_capture",
+    "manual"
+   ],
+   "type": "string"
+  },
+  "stage": {
+   "enum": [
+    "INGEST",
+    "NORMALIZE",
+    "DISPATCH",
+    "COLLECT",
+    "SYNTHESIZE",
+    "VALIDATE",
+    "AUTHORIZED_EXECUTION",
+    "DELIVER",
+    "ARCHIVE"
+   ],
+   "type": "string"
+  },
+  "stage_history": {
+   "items": {
+    "properties": {
+     "at": {
+      "format": "date-time",
+      "type": "string"
+     },
+     "by": {
+      "type": "string"
+     },
+     "note": {
+      "type": "string"
+     },
+     "stage": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "stage",
+     "at",
+     "by"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "task_id": {
+   "description": "Deterministic: sha1(source_adapter|evidence_key|created_utc_minute), first 16 hex chars. Same input twice = same id = dedup hit.",
+   "type": "string"
+  },
+  "task_type": {
+   "enum": [
+    "screenshot_rebuttal",
+    "outreach_draft",
+    "research",
+    "tender_scout",
+    "price_watch",
+    "business_package",
+    "epistemic_challenge",
+    "other"
+   ],
+   "type": "string"
+  },
+  "user_intent": {
+   "description": "Verbatim user intent as captured at ingest.",
+   "type": "string"
+  },
+  "editorial_state": {
+   "enum": [
+    "ARGON_PENDING",
+    "ARGON_UNAVAILABLE",
+    "CLAUDE_FINAL_EDIT_FALLBACK",
+    "ARGON_REVIEW_PENDING",
+    "ARGON_APPROVED"
+   ],
+   "description": "Auditable editorial fallback lifecycle. See mesh/README.md."
+  },
+  "editorial_transitions": {
+   "type": "array",
+   "description": "Append-only record of editorial state transitions.",
+   "items": {
+    "type": "object"
+   }
+  }
+ },
+ "required": [
+  "envelope_version",
+  "task_id",
+  "created_at",
+  "source_adapter",
+  "task_type",
+  "user_intent",
+  "evidence",
+  "stage",
+  "stage_history",
+  "dispatch",
+  "approvals",
+  "result",
+  "audit"
+ ],
+ "title": "Mesh Canonical Task Envelope v1.1 (argon migration, backward compatible)",
+ "type": "object"
+}
