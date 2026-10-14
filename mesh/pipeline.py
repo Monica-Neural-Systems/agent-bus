@@ -5,8 +5,11 @@ Usage:
   pipeline.py ingest --adapter chat_upload --image shot.png --intent "..." [--dial 1] [--task-type screenshot_rebuttal]
   pipeline.py advance <task_id>            # run the next stage for a live task
   pipeline.py collect <task_id> --agent claude --result results/claude.json
-  pipeline.py mark-unavailable <task_id> --agent spark --note "limit hit"
-  pipeline.py approve <task_id> --gate spark_editorial --by spark --text approved.txt
+  pipeline.py mark-unavailable <task_id> --agent argon --note "quota hit"
+  pipeline.py mark-available <task_id> --agent argon
+  pipeline.py approve <task_id> --gate argon_editorial --by argon --text approved.txt
+  pipeline.py deliver <task_id> --channel buffer
+  pipeline.py confirm-delivery <task_id> --outcome DELIVERED --note "buffer id 123"
   pipeline.py status <task_id>
 """
 import argparse, hashlib, json, os, shutil, sys, datetime
@@ -20,14 +23,26 @@ INBOX = os.path.join(ROOT, "inbox")
 
 STAGES = ["INGEST", "NORMALIZE", "DISPATCH", "COLLECT", "SYNTHESIZE",
           "VALIDATE", "AUTHORIZED_EXECUTION", "DELIVER", "ARCHIVE"]
-AGENTS = ["openclaw", "claude", "spark", "owen"]
-GATES = ["spark_editorial", "michael_send", "michael_buffer", "michael_spend"]
+# Canonical agent IDs. "argon" replaced "spark" (2026-10-13): the Spark brand was
+# retired by Google; the agent continues as Gemini Tasks on Argon. "spark" is
+# retained ONLY as a legacy alias for reading old envelopes and inbox files.
+# Do not dispatch new work to "spark".
+AGENTS = ["openclaw", "claude", "argon", "owen"]
+LEGACY_ALIASES = {"spark": "argon"}
+GATES = ["argon_editorial", "michael_send", "michael_buffer", "michael_spend"]
+# Deprecated gate name, accepted for envelopes created before the argon migration.
+# New approvals must use "argon_editorial".
+LEGACY_GATES = {"spark_editorial": "argon_editorial"}
 
 AGENT_ROLES = {
     "openclaw": "Windows host daemon: intake adapters, watched folders, Telegram alerts, local file ops.",
-    "claude": "Lead Reasoning: Fast Response v8 drafts (dial rules, <850/<280, ```text blocks, 3-line breakdown), business packages, epistemic challenges.",
-    "spark": "Editor-in-Chief: final editorial sign-off on ALL public text.",
-    "owen": "Web Scout + Distribution: research, verification, Buffer queueing (post-approval), execution, audit.",
+    "claude": "First-draft writer. Fast Response v8 drafts, business packages, epistemic challenges. "
+              "TEMPORARY fallback final editor ONLY when argon is marked unavailable "
+              "(result marked FINAL_EDIT_FALLBACK_CLAUDE; never imply argon reviewed it).",
+    "argon": "Preferred final reasoning editor and rebuttal sharpener. Final editorial sign-off "
+             "on ALL public text. (Formerly 'spark'; same agent, new canonical ID.)",
+    "owen": "Intake, dispatch, orchestration, delivery, retries, audit. Research, source verification, "
+            "legwork, evidence collection. Buffer queueing (post-approval only).",
 }
 
 TASK_TYPES = ["screenshot_rebuttal", "outreach_draft", "research", "tender_scout",
@@ -47,7 +62,52 @@ def sha1_file(path):
 
 
 def sha1_text(s):
-    return hashlib.sha1(s.encode("utf-8")).hexdigest()
+    return hashlib.sha1(canonical_text(s).encode("utf-8")).hexdigest()
+
+
+def canonical_text(s):
+    """Canonical text form for hashing and comparison.
+
+    - Unicode string (decode bytes as UTF-8 if needed).
+    - Line endings normalized: CRLF -> LF, lone CR -> LF.
+    - No BOM. No trailing-whitespace stripping: "hello" and "hello\\n"
+      are DIFFERENT texts and hash differently. This is intentional:
+      byte-for-byte approval matching must not silently ignore newlines.
+    """
+    if isinstance(s, bytes):
+        s = s.decode("utf-8")
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+    if s.startswith("\ufeff"):
+        s = s[1:]
+    return s
+
+
+def sha1_file_canonical(path):
+    """SHA1 of a file's canonical text form. For approval text matching."""
+    with open(path, "rb") as f:
+        return sha1_text(f.read())
+
+
+def set_editorial_state(env, new_state, by, note=""):
+    """Auditable editorial state transition. Never silently discards tasks."""
+    old = env.get("editorial_state", "ARGON_PENDING")
+    valid = {
+        "ARGON_PENDING": ["ARGON_UNAVAILABLE", "ARGON_APPROVED"],
+        "ARGON_UNAVAILABLE": ["CLAUDE_FINAL_EDIT_FALLBACK", "ARGON_REVIEW_PENDING"],
+        "CLAUDE_FINAL_EDIT_FALLBACK": ["ARGON_REVIEW_PENDING"],
+        "ARGON_REVIEW_PENDING": ["ARGON_APPROVED", "ARGON_UNAVAILABLE"],
+        "ARGON_APPROVED": ["ARGON_REVIEW_PENDING"],  # re-open if candidate changes
+    }
+    if new_state not in valid.get(old, []):
+        raise SystemExit(
+            f"invalid editorial transition {old} -> {new_state} "
+            f"(allowed: {valid.get(old, [])})"
+        )
+    env["editorial_state"] = new_state
+    env.setdefault("editorial_transitions", []).append(
+        {"state": new_state, "from": old, "at": utcnow(), "by": by, "note": note}
+    )
+    audit(env, f"editorial: {old} -> {new_state} ({note})", by=by)
 
 
 def load_registry():
@@ -120,6 +180,13 @@ def cmd_ingest(args):
 
     task_id = compute_task_id(args.adapter, ev_key)
     tdir = task_dir(task_id)
+    # Idempotent ingest: never overwrite a live task or its evidence.
+    # If this task_id already has an envelope, the input is a duplicate —
+    # return the existing id without touching evidence or stage history.
+    existing = os.path.join(tdir, "envelope.json")
+    if os.path.exists(existing):
+        print(f"duplicate ingest: task {task_id} already exists, not overwritten")
+        return task_id
     os.makedirs(os.path.join(tdir, "evidence"), exist_ok=True)
     os.makedirs(os.path.join(tdir, "results"), exist_ok=True)
 
@@ -144,7 +211,19 @@ def cmd_ingest(args):
         "stage_history": [{"stage": "INGEST", "at": utcnow(), "by": args.adapter, "note": "ingested"}],
         "dispatch": {a: {"role": AGENT_ROLES[a], "status": "pending",
                          "result_ref": None, "note": "", "updated_at": None} for a in AGENTS},
-        "approvals": {g: {"status": "not_required", "by": None, "at": None, "text_sha1": None} for g in GATES},
+        "approvals": {g: {"status": "not_required", "by": None, "at": None, "text_sha1": None,
+                          "fallback": False} for g in GATES},
+        # Editorial state machine (auditable transitions):
+        #   ARGON_PENDING -> ARGON_UNAVAILABLE -> CLAUDE_FINAL_EDIT_FALLBACK
+        #       -> ARGON_REVIEW_PENDING -> ARGON_APPROVED
+        # A quota/timeout failure must never silently discard the task or falsely
+        # mark review complete. Claude fallback is recorded distinctly from argon review.
+        # Argon resumption preserves task ID, evidence, candidate text, review history.
+        "editorial_state": "ARGON_PENDING",
+        "editorial_transitions": [
+            {"state": "ARGON_PENDING", "at": utcnow(), "by": args.adapter,
+             "note": "argon is the preferred final editor"}
+        ],
         "result": {"synthesized": None, "delivery_channel": None, "delivered_at": None},
         "duplicate_of": None,
         "audit": [f"[{utcnow()}] [{args.adapter}] ingested: {args.intent[:120]}"],
@@ -166,8 +245,8 @@ def cmd_normalize(env):
         return
     # task_type-specific gate defaults
     if env["task_type"] == "screenshot_rebuttal":
-        env["approvals"]["spark_editorial"]["status"] = "pending"
-        audit(env, "NORMALIZE: spark_editorial gate armed (public text task)")
+        env["approvals"]["argon_editorial"]["status"] = "pending"
+        audit(env, "NORMALIZE: argon_editorial gate armed (public text task)")
     set_stage(env, "NORMALIZE", note="evidence hashed, gates armed")
     save_envelope(env)
     print(f"normalized {env['task_id']}")
@@ -202,6 +281,10 @@ def cmd_dispatch(env):
 # ---------------- COLLECT ----------------
 
 def cmd_collect(env, agent, result_path):
+    # Legacy alias: results filed under "spark" are attributed to argon.
+    agent = LEGACY_ALIASES.get(agent, agent)
+    if agent not in AGENTS:
+        raise SystemExit(f"unknown agent {agent}")
     with open(result_path) as f:
         res = json.load(f)
     tdir = task_dir(env["task_id"])
@@ -218,13 +301,41 @@ def cmd_collect(env, agent, result_path):
 
 
 def cmd_mark_unavailable(env, agent, note):
+    agent = LEGACY_ALIASES.get(agent, agent)
+    if agent not in AGENTS:
+        raise SystemExit(f"unknown agent {agent}")
     slot = env["dispatch"][agent]
     slot["status"] = "unavailable"
     slot["note"] = note
     slot["updated_at"] = utcnow()
     audit(env, f"COLLECT: {agent} UNAVAILABLE ({note}) — recorded, not fabricated")
+    # Argon going down drives the editorial state machine. The task is NOT
+    # discarded; it waits for Claude fallback or argon resumption.
+    if agent == "argon" and env.get("editorial_state") in ("ARGON_PENDING", "ARGON_REVIEW_PENDING"):
+        set_editorial_state(env, "ARGON_UNAVAILABLE", by="pipeline",
+                            note=f"argon unavailable: {note}")
     save_envelope(env)
     print(f"{agent} marked unavailable")
+
+
+def cmd_mark_available(env, agent, note=""):
+    """Argon (or any agent) is back. For argon, drives resumption:
+    ARGON_UNAVAILABLE -> ARGON_REVIEW_PENDING, or
+    CLAUDE_FINAL_EDIT_FALLBACK -> ARGON_REVIEW_PENDING.
+    Original task ID, evidence, candidate text, and history are preserved."""
+    agent = LEGACY_ALIASES.get(agent, agent)
+    if agent not in AGENTS:
+        raise SystemExit(f"unknown agent {agent}")
+    slot = env["dispatch"][agent]
+    slot["status"] = "pending"
+    slot["note"] = note or "available again"
+    slot["updated_at"] = utcnow()
+    audit(env, f"{agent} marked available again ({slot['note']})")
+    if agent == "argon" and env.get("editorial_state") in ("ARGON_UNAVAILABLE", "CLAUDE_FINAL_EDIT_FALLBACK"):
+        set_editorial_state(env, "ARGON_REVIEW_PENDING", by="pipeline",
+                            note="argon resumed; awaiting argon review of current candidate")
+    save_envelope(env)
+    print(f"{agent} marked available")
 
 
 # ---------------- SYNTHESIZE ----------------
@@ -266,12 +377,19 @@ def check_gates(env):
     needs_editorial = env["task_type"] in ("screenshot_rebuttal", "outreach_draft", "business_package")
     synth = env["result"]["synthesized"] or {}
     draft = (synth.get("primary_draft") or {}).get("text", "")
+    # Canonical editorial gate; legacy spark_editorial accepted for old envelopes.
+    ap = env["approvals"].get("argon_editorial") or env["approvals"].get("spark_editorial") or {}
+    editorial_state = env.get("editorial_state", "ARGON_PENDING")
     if needs_editorial:
-        ap = env["approvals"]["spark_editorial"]
-        if ap["status"] != "approved":
-            problems.append("spark_editorial not approved")
-        elif draft and ap["text_sha1"] != sha1_text(draft):
-            problems.append("approved text_sha1 does not match draft — re-approval required")
+        if ap.get("status") != "approved":
+            problems.append("argon_editorial not approved")
+        elif draft and ap.get("text_sha1") != sha1_text(draft):
+            # Candidate changed after approval -> invalidate, require re-approval
+            # of the exact new text. This is enforced, not just warned.
+            problems.append("approved text_sha1 does not match draft — candidate changed, re-approval required")
+        elif ap.get("fallback") and editorial_state == "CLAUDE_FINAL_EDIT_FALLBACK":
+            # Fallback approval is valid for proceeding, but flagged distinctly.
+            pass  # no problem; the FINAL_EDIT_FALLBACK_CLAUDE marking travels with the result
     if draft:
         channel = env["result"]["delivery_channel"] or "linkedin"
         ok, msg = check_limits(draft, "x" if channel == "x" else "linkedin")
@@ -299,19 +417,68 @@ def cmd_validate(env):
 # ---------------- APPROVE ----------------
 
 def cmd_approve(env, gate, by, text_path):
+    # Resolve legacy gate names (spark_editorial -> argon_editorial).
+    original_gate = gate
+    gate = LEGACY_GATES.get(gate, gate)
     if gate not in GATES:
-        raise SystemExit(f"unknown gate {gate}")
-    if by not in ("spark", "michael"):
-        raise SystemExit("approvals only from spark or michael")
-    if gate == "spark_editorial" and by != "spark":
-        raise SystemExit("spark_editorial must come from spark")
+        raise SystemExit(f"unknown gate {original_gate}")
+    # Resolve legacy agent alias (spark -> argon) for reading old records,
+    # but new approvals must use the canonical identity.
+    by_canonical = LEGACY_ALIASES.get(by, by)
+    if by != by_canonical:
+        audit(env, f"APPROVAL: legacy identity '{by}' resolved to '{by_canonical}'", by=by)
+    by = by_canonical
+
+    # Editorial gate authorization rules. A bare --by string is NOT proof of
+    # authorization; these rules enforce WHO may approve WHAT and WHEN.
+    # (Human verification of the approver happens outside the pipeline.)
+    editorial_state = env.get("editorial_state", "ARGON_PENDING")
+    if gate == "argon_editorial":
+        if by == "argon":
+            pass  # canonical path
+        elif by == "claude":
+            # Fallback ONLY when argon is demonstrably unavailable.
+            if editorial_state != "ARGON_UNAVAILABLE":
+                raise SystemExit(
+                    f"claude may approve editorial gate ONLY when argon is unavailable "
+                    f"(editorial_state={editorial_state}). Mark argon unavailable first."
+                )
+        else:
+            raise SystemExit(f"argon_editorial must come from argon (or claude as fallback), not {by}")
     if gate.startswith("michael_") and by != "michael":
-        raise SystemExit(f"{gate} must come from michael")
-    text_sha1 = sha1_file(text_path) if text_path else None
-    env["approvals"][gate] = {"status": "approved", "by": by, "at": utcnow(), "text_sha1": text_sha1}
-    audit(env, f"APPROVAL: {gate} approved by {by}" + (f" (text_sha1 {text_sha1[:12]})" if text_sha1 else ""), by=by)
+        raise SystemExit(f"{gate} must come from michael, not {by}")
+
+    text_sha1 = sha1_file_canonical(text_path) if text_path else None
+    is_fallback = (gate == "argon_editorial" and by == "claude")
+    # Candidate changed since last approval? Invalidate explicitly first so the
+    # audit shows the invalidation, then record the new approval.
+    prev = env["approvals"].get(gate) or {}
+    if (gate == "argon_editorial" and prev.get("status") == "approved"
+            and text_sha1 and prev.get("text_sha1") != text_sha1
+            and env.get("editorial_state") == "ARGON_APPROVED"):
+        set_editorial_state(env, "ARGON_REVIEW_PENDING", by=by,
+                            note="candidate changed since last approval; prior approval invalidated")
+    env["approvals"][gate] = {
+        "status": "approved", "by": by, "at": utcnow(),
+        "text_sha1": text_sha1, "fallback": is_fallback,
+    }
+    if is_fallback:
+        set_editorial_state(env, "CLAUDE_FINAL_EDIT_FALLBACK", by="claude",
+                            note="FINAL_EDIT_FALLBACK_CLAUDE — argon was unavailable; "
+                                 "this is NOT an argon review")
+        # Mark the synthesized result distinctly so downstream stages and
+        # humans never mistake this for argon approval.
+        synth = env["result"].get("synthesized") or {}
+        synth["final_edit"] = "FINAL_EDIT_FALLBACK_CLAUDE"
+        env["result"]["synthesized"] = synth
+    elif gate == "argon_editorial" and by == "argon":
+        set_editorial_state(env, "ARGON_APPROVED", by="argon",
+                            note="argon approved exact candidate text")
+    audit(env, f"APPROVAL: {gate} approved by {by}"
+          + (" [FALLBACK — not argon]" if is_fallback else "")
+          + (f" (text_sha1 {text_sha1[:12]})" if text_sha1 else ""), by=by)
     save_envelope(env)
-    print(f"{gate} approved by {by}")
+    print(f"{gate} approved by {by}" + (" [FALLBACK]" if is_fallback else ""))
 
 
 # ---------------- EXECUTE / DELIVER / ARCHIVE ----------------
@@ -337,15 +504,37 @@ def cmd_set_channel(env, channel):
 
 
 def cmd_deliver(env, channel):
+    """Record delivery INTENT. A local delivery.md file is NOT proof of external
+    delivery. Status starts as DELIVERY_PENDING; the real external result must be
+    recorded via confirm-delivery when an integration exists."""
     env["result"]["delivery_channel"] = channel
-    env["result"]["delivered_at"] = utcnow()
+    env["result"]["delivery_status"] = "DELIVERY_PENDING"
+    env["result"]["delivered_at"] = None
     tdir = task_dir(env["task_id"])
     with open(os.path.join(tdir, "delivery.md"), "w") as f:
-        f.write(f"# Delivery {env['task_id']}\n\nchannel: {channel}\nat: {env['result']['delivered_at']}\n\n"
+        f.write(f"# Delivery {env['task_id']}\n\nchannel: {channel}\nstatus: DELIVERY_PENDING\n"
+                f"at: {utcnow()}\n\n"
+                f"> This file records delivery INTENT, not completion. "
+                f"Use `confirm-delivery` to record the real external result.\n\n"
                 f"```json\n{json.dumps(env['result']['synthesized'], indent=1)[:4000]}\n```\n")
-    set_stage(env, "DELIVER", note=f"delivered via {channel}")
+    audit(env, f"delivery intent recorded for channel {channel} (status DELIVERY_PENDING)")
+    set_stage(env, "DELIVER", note=f"delivery intent via {channel} (pending confirmation)")
     save_envelope(env)
-    print(f"delivered {env['task_id']} via {channel}")
+    print(f"delivered {env['task_id']} via {channel} (DELIVERY_PENDING — confirm with confirm-delivery)")
+
+
+def cmd_confirm_delivery(env, outcome, note=""):
+    """Record the REAL external delivery result. outcome: DELIVERED | FAILED | AMBIGUOUS."""
+    if outcome not in ("DELIVERED", "FAILED", "AMBIGUOUS"):
+        raise SystemExit(f"unknown delivery outcome {outcome}")
+    env["result"]["delivery_status"] = outcome
+    if outcome == "DELIVERED":
+        env["result"]["delivered_at"] = utcnow()
+    audit(env, f"delivery outcome: {outcome}" + (f" ({note})" if note else ""))
+    if outcome == "AMBIGUOUS":
+        audit(env, "AMBIGUOUS delivery: reconcile before retrying to avoid duplicate posts/sends")
+    save_envelope(env)
+    print(f"delivery outcome recorded: {outcome}")
 
 
 def cmd_archive(env):
@@ -377,8 +566,8 @@ def cmd_archive(env):
     env["_archived"] = True
     set_stage(env, "ARCHIVE", note="task archived, id registered")
     save_envelope(env)
-    # clean dispatched inbox files
-    for agent in AGENTS:
+    # clean dispatched inbox files (canonical + legacy locations)
+    for agent in AGENTS + list(LEGACY_ALIASES.keys()):
         p = os.path.join(INBOX, agent, f"task-{env['task_id']}.md")
         done = os.path.join(INBOX, agent, "done")
         if os.path.exists(p):
@@ -441,13 +630,21 @@ def main():
     p = sub.add_parser("mark-unavailable")
     p.add_argument("task_id"); p.add_argument("--agent", required=True); p.add_argument("--note", default="no result")
 
+    p = sub.add_parser("mark-available")
+    p.add_argument("task_id"); p.add_argument("--agent", required=True); p.add_argument("--note", default="")
+
     p = sub.add_parser("approve")
-    p.add_argument("task_id"); p.add_argument("--gate", required=True, choices=GATES)
+    p.add_argument("task_id"); p.add_argument("--gate", required=True,
+        choices=GATES + list(LEGACY_GATES.keys()))
     p.add_argument("--by", required=True); p.add_argument("--text", default=None)
 
     p = sub.add_parser("deliver")
     p.add_argument("task_id"); p.add_argument("--channel", required=True,
         choices=["chat", "buffer", "telegram", "email_draft"])
+
+    p = sub.add_parser("confirm-delivery")
+    p.add_argument("task_id"); p.add_argument("--outcome", required=True,
+        choices=["DELIVERED", "FAILED", "AMBIGUOUS"]); p.add_argument("--note", default="")
 
     p = sub.add_parser("set-channel")
     p.add_argument("task_id"); p.add_argument("--channel", required=True,
@@ -464,10 +661,14 @@ def main():
         env = load_envelope(args.task_id); cmd_collect(env, args.agent, args.result)
     elif args.cmd == "mark-unavailable":
         env = load_envelope(args.task_id); cmd_mark_unavailable(env, args.agent, args.note)
+    elif args.cmd == "mark-available":
+        env = load_envelope(args.task_id); cmd_mark_available(env, args.agent, args.note)
     elif args.cmd == "approve":
         env = load_envelope(args.task_id); cmd_approve(env, args.gate, args.by, args.text)
     elif args.cmd == "deliver":
         env = load_envelope(args.task_id); cmd_deliver(env, args.channel)
+    elif args.cmd == "confirm-delivery":
+        env = load_envelope(args.task_id); cmd_confirm_delivery(env, args.outcome, args.note)
     elif args.cmd == "set-channel":
         env = load_envelope(args.task_id); cmd_set_channel(env, args.channel)
     elif args.cmd == "status":
