@@ -1,8 +1,8 @@
 {
- "updated": "2026-10-14 19:05 UTC",
+ "updated": "2026-10-15 00:55 UTC",
  "email_routing": "all unanswered + all new outbound from michael@digamoni.ca; replied threads stay on original sender; never owen@icroot.ca",
- "wave2": "ZITRON SENT 2026-10-13 09:15 Regina from michael@digamoni.ca -> ez@betteroffline.com (his self-published contact; correct routing). Stale krash6t9@gmail.com draft r1164458923075287179 inert in Drafts — Michael approved deletion, but Gmail API draft-delete is scope-blocked, so he must delete it manually from the Gmail app. Gebru/Russell/Li/Liang drafts staged, awaiting his exact-text approval; Zaharia draft pending from Claude.",
- "zaharia_followup": "Routed to Claude as fallback writer per Michael's 2026-10-12 'you decide' instruction; bus request delivered 2026-10-13 18:50 UTC; still NO Zaharia draft in Gmail as of 2026-10-14 00:48 UTC — Claude hasn't delivered.",
+ "wave2": "ZITRON SENT 2026-10-13 09:15 Regina from michael@digamoni.ca -> ez@betteroffline.com (his self-published contact; correct routing). Stale krash6t9@gmail.com draft r1164458923075287179 inert in Drafts \u2014 Michael approved deletion, but Gmail API draft-delete is scope-blocked, so he must delete it manually from the Gmail app. Gebru/Russell/Li/Liang drafts staged, awaiting his exact-text approval; Zaharia draft pending from Claude.",
+ "zaharia_followup": "Routed to Claude as fallback writer per Michael's 2026-10-12 'you decide' instruction; bus request delivered 2026-10-13 18:50 UTC; still NO Zaharia draft in Gmail as of 2026-10-14 00:48 UTC \u2014 Claude hasn't delivered.",
  "wave2_hold_until": "2026-10-13 (lifted)",
  "wave2_targets": [
   "Timnit Gebru",
@@ -13,7 +13,7 @@
   "Matei Zaharia"
  ],
  "bostrom": "declined by office 2026-10-12, do not recontact",
- "powerhouses_queue": "workspace/outreach/powerhouses-queue.md — 78/91 fresh verified emails, Spark review pending",
+ "powerhouses_queue": "workspace/outreach/powerhouses-queue.md \u2014 78/91 fresh verified emails, Spark review pending",
  "arena_roster": 12,
  "social": {
   "linkedin": "zapier connected 2026-10-12",
@@ -27,8 +27,9 @@
  "gmail_status": "connected (verified live 2026-10-14 19:02 UTC - sent audit + 8-draft read OK)",
  "icroot_bounce": "CLOSED 2026-10-13 midday: the Oct 12 Failure/Delay notices for owen@icroot.ca trace to Mike's own Oct 9 'Forward test 11:23' self-test (thread in trash). No campaign mail routes through owen@icroot.ca.",
  "gumpert_sisp": "SENT 2026-10-13 11:29 Regina from krash6t9@gmail.com to Zahra.Jamani@parthenon.ey.com (EY-Parthenon, court file CL-26-00000409-0000); original sender kept per thread rule. Second reply SENT 2026-10-13 18:54 Regina from krash6t9@gmail.com (Mike's hand; duplicate draft remnant r-9150888464849734045 inert in Drafts).",
- "mesh_pending_claude": "inbox/claude/tg-mv6xd1k4-g4g06.json — INGEST envelope from Michael 2026-10-13 16:58 UTC (text '1' + photo ref); still unhandled, Claude's lane.",
- "mesh_ping_owen": "Telegram INGEST envelope tg-mv75c8m0-8am5b ('Ping', from Mike, 2026-10-13 20:41 UTC) received in inbox/owen and handled — mesh intake path to Owen confirmed live; moved to inbox/owen/done/.",
+ "mesh_pending_claude": "inbox/claude/tg-mv6xd1k4-g4g06.json \u2014 INGEST envelope from Michael 2026-10-13 16:58 UTC (text '1' + photo ref); still unhandled, Claude's lane.",
+ "mesh_ping_owen": "Telegram INGEST envelope tg-mv75c8m0-8am5b ('Ping', from Mike, 2026-10-13 20:41 UTC) received in inbox/owen and handled \u2014 mesh intake path to Owen confirmed live; moved to inbox/owen/done/.",
  "mesh_identity": "2026-10-13 PR #1 merged: 'spark' retired as mesh identity -> 'argon' canonical (Gemini 4 Argon Tasks mode); new dispatches go to inbox/argon/; inbox/spark/ preserved legacy. Editorial fallback: ARGON_PENDING->ARGON_UNAVAILABLE->CLAUDE_FINAL_EDIT_FALLBACK.",
- "midday_check": "2026-10-14 19:02 UTC (12:47 CST): wire tail read (latest entry morning housecleaning 13:48 UTC). inbox/owen holds 2 QUEUED overnight Telegram pings from Michael (tg-8824599912-36 'To mama' 06:41:43Z; tg-8824599912-38 'JO' 06:48:09Z) - test content only, no action taken, left in place per standing boundaries. No Gmail sends today since the morning check; 8 drafts unchanged (Mitchell, alber.romgar, Wave-2 Gebru/Russell/Li/Liang staged awaiting Mike's exact-text approval; stale Zitron r1164458923075287179 + Gumpert remnant r-9150888464849734045 inert). Nothing urgent - silent in chat."
+ "midday_check": "2026-10-14 19:02 UTC (12:47 CST): wire tail read (latest entry morning housecleaning 13:48 UTC). inbox/owen holds 2 QUEUED overnight Telegram pings from Michael (tg-8824599912-36 'To mama' 06:41:43Z; tg-8824599912-38 'JO' 06:48:09Z) - test content only, no action taken, left in place per standing boundaries. No Gmail sends today since the morning check; 8 drafts unchanged (Mitchell, alber.romgar, Wave-2 Gebru/Russell/Li/Liang staged awaiting Mike's exact-text approval; stale Zitron r1164458923075287179 + Gumpert remnant r-9150888464849734045 inert). Nothing urgent - silent in chat.",
+ "evening_check": "2026-10-15 00:55 UTC (18:55 CST): wire tail read (latest entry midday check 19:05 UTC). inbox/owen unchanged - 2 QUEUED overnight Telegram test pings (tg-8824599912-36 \"To mama\", tg-8824599912-38 \"JO\"), no action, left in place per standing boundaries. Gmail: no sends today; inbox has no luminary replies (7th straight dry day); 8 drafts unchanged (Mitchell, alber.romgar, Wave-2 Gebru/Russell/Li/Liang staged; stale Zitron r1164458923075287179 + Gumpert remnant inert). Still no Zaharia draft from Claude (~54h since bus request). Noted new repo commits 18:28-18:29 UTC \"test: Owen push to Telegram via outbox\" + \"mesh: deliver outbox\" - unreviewed by me, origin unclear, flagged for Michael. Nothing urgent - silent in chat."
 }
